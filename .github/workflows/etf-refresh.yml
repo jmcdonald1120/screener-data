@@ -1,4 +1,3 @@
-yaml
 name: ETF daily refresh
 
 on:
