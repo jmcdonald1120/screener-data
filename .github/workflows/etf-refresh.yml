@@ -1,0 +1,37 @@
+yaml
+name: ETF daily refresh
+
+on:
+  schedule:
+    - cron: "0 22 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Refresh ETF data
+        env:
+          APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+          APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+        run: python alpaca_etf_refresh_V1.py --tickers tickers.txt --out etf-data.json
+
+      - name: Commit if changed
+        run: |
+          git config user.name "etf-refresh-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add etf-data.json
+          git diff --staged --quiet || git commit -m "Daily ETF data $(date -u +%F)"
+          git push
